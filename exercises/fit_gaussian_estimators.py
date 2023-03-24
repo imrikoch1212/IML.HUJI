@@ -84,7 +84,6 @@ def test_multivariate_gaussian():
     max_index_col = (max_index - max_index_row * 200) % 200
     print("f1: " + str(round(linspace[max_index_row], 3)))
     print("f3: " + str(round(linspace[max_index_col], 3)))
-    print(log_likelihood_result[max_index_row][max_index_col])
 
 
 if __name__ == '__main__':
