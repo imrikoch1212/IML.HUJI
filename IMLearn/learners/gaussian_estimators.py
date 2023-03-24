@@ -115,10 +115,9 @@ class UnivariateGaussian:
         """
 
         """based on question 13"""
-        d = len(X)
-        first_arg = (-mu * d * numpy.log(2 * numpy.pi)) / 2
-        second_arg = (-mu / 2) * numpy.log(sigma)
-        third_arg = (-1 / 2) * numpy.sum((X - mu) * (1 / sigma) * (X - mu))
+        first_arg = -(np.log(2 * np.pi)) * len(X) / 2
+        second_arg = (- len(X) / 2) * np.log(sigma)
+        third_arg = (-1 / (2 * sigma)) * np.sum((X - mu) ** 2)
         log_likelihood = first_arg + second_arg + third_arg
         return log_likelihood
 
@@ -169,8 +168,8 @@ class MultivariateGaussian:
         """
 
         self.mu_ = X.mean(axis=0)
-        x_hat = X-self.mu_
-        self.cov_ = np.multiply(x_hat.T, x_hat) * (1 / len(X))
+        x_hat = X - self.mu_
+        self.cov_ = np.matmul(x_hat.T, x_hat) / (len(X) - 1)
         self.fitted_ = True
         return self
 
@@ -195,7 +194,18 @@ class MultivariateGaussian:
         if not self.fitted_:
             raise ValueError(
                 "Estimator must first be fitted before calling `pdf` function")
-        raise NotImplementedError()
+        shape = np.shape(X)
+        n_samples = shape[0]
+        d = shape[1]
+        sigma_inverse = np.linalg.inv(self.cov_)
+        sigma_det = det(self.cov_)
+        pdf = np.zeros(n_samples)
+        first_arg = 1 / np.sqrt(np.power(2 * np.pi, d) * sigma_det)
+        for i in range(n_samples):
+            xi_mu = X[i] - self.mu_
+            exp_i = numpy.exp(-0.5 * (xi_mu.T @ sigma_inverse @ xi_mu))
+            pdf[i] = first_arg * exp_i
+        return pdf
 
     @staticmethod
     def log_likelihood(mu: np.ndarray, cov: np.ndarray,
@@ -217,4 +227,14 @@ class MultivariateGaussian:
         log_likelihood: float
             log-likelihood calculated over all input data and under given parameters of Gaussian
         """
-        raise NotImplementedError()
+        shape = np.shape(X)
+        m = shape[0]
+        d = shape[1]
+        xi_mu = X - mu
+        sigma_inverse = np.linalg.inv(cov)
+        (sign, log_det) = slogdet(cov)
+        first_arg = -0.5 * m * d * np.log(2 * np.pi)
+        second_arg = -0.5 * m * log_det
+        third_arg = -.5 * (np.sum(xi_mu @ sigma_inverse * xi_mu))
+        result = first_arg + second_arg + third_arg
+        return result

@@ -1,8 +1,10 @@
 import numpy as np
+import numpy.random
 import plotly.express as px
 import plotly.io as pio
+import plotly.graph_objects as go
 
-from IMLearn.learners import UnivariateGaussian
+from IMLearn.learners import UnivariateGaussian, MultivariateGaussian
 
 pio.templates.default = "simple_white"
 
@@ -26,7 +28,8 @@ def test_univariate_gaussian():
                            "x": "Sample Size",
                            "y": "Distance from mu"
                        },
-                       title="Sample mean estimation deviation",
+                       title="Distance Between Estimated And True "
+                             "Value Of The Expectation",
                        )
     fig_2.write_image("q2.result.png")
 
@@ -39,23 +42,52 @@ def test_univariate_gaussian():
                            "x": "x",
                            "y": "PDF"
                        },
-                       title="Empirical PDF",
+                       title="PDF Of The Previous Drawn Samples",
                        )
     fig_3.write_image("q3.result.png")
 
 
 def test_multivariate_gaussian():
     # Question 4 - Draw samples and print fitted model
-    raise NotImplementedError()
+    mu = [0, 0, 4, 0]
+    cov = np.array(
+        [[1, 0.2, 0, 0.5], [0.2, 2, 0, 0], [0, 0, 1, 0], [0.5, 0, 0, 1]])
+    samples = numpy.random.multivariate_normal(mu, cov, 1000)
+    mg = MultivariateGaussian()
+    mg.fit(samples)
+    print(mg.mu_)
+    print(mg.cov_)
 
-    # Question 5 - Likelihood evaluation
-    raise NotImplementedError()
+    # # Question 5 - Likelihood evaluation
+    linspace = np.linspace(-10, 10, 200)
+    log_likelihood_result = np.zeros((200, 200))
+    for i in range(len(linspace)):
+        for j in range(len(linspace)):
+            mu = np.array([linspace[i], 0, linspace[j], 0]).T
+            likelihood_result = MultivariateGaussian. \
+                log_likelihood(mu, cov, samples)
+            log_likelihood_result[i][j] = likelihood_result
 
-    # Question 6 - Maximum likelihood
-    raise NotImplementedError()
+    fig_5 = go.Figure(
+        [go.Heatmap(x=linspace, y=linspace, z=log_likelihood_result, )],
+    )
+    fig_5.update_layout(
+        title='Log-Likelihood Where Mu Is [f1,0,f3,0]',
+        xaxis_title="$\\text{f3}$",
+        yaxis_title="$\\text{f1}$"
+    )
+    fig_5.write_image("q5.result.png")
+
+    # # Question 6 - Maximum likelihood
+    max_index = np.argmax(log_likelihood_result)
+    max_index_row = int(np.floor(max_index / 200))
+    max_index_col = (max_index - max_index_row * 200) % 200
+    print("f1: " + str(round(linspace[max_index_row], 3)))
+    print("f3: " + str(round(linspace[max_index_col], 3)))
+    print(log_likelihood_result[max_index_row][max_index_col])
 
 
 if __name__ == '__main__':
     np.random.seed(0)
     test_univariate_gaussian()
-    # test_multivariate_gaussian()
+    test_multivariate_gaussian()
